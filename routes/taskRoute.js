@@ -19,8 +19,8 @@ router.post('/add-task', (req, res) => {
 
     // SQL query
     const insertTaskQuery = `
-        INSERT INTO task (User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate, Task_done)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO task (User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate)
+        VALUES (?, ?, ?, ?, ?, ?);
     `;
 
     db.query(
