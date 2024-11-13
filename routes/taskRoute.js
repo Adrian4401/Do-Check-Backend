@@ -5,27 +5,27 @@ const router = express.Router();
 
 //Adding tasks
 router.post('/add-task', (req, res) => {
-    const { User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.query;
+    const { User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.body;
 
     // Check required fields
     if (!User_ID || !Task_title || !Task_due_date)
-        return res.status(400).json({ error: 'User_ID, Task_title, and Task_due_date are required' });
-
+        return res.status(402).json({ error: 'User_ID, Task_title, and Task_due_date are required' });
+    
     // Validation
     const dueDate = new Date(Task_due_date);
     if (isNaN(dueDate.getTime())) {
-        return res.status(400).json({ error: 'Invalid date format for Task_due_date. Use YYYY-MM-DD.' });
+        return res.status(401).json({ error: 'Invalid date format for Task_due_date. Use YYYY-MM-DD.' });
     }
 
     // SQL query
     const insertTaskQuery = `
-        INSERT INTO task (User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate)
-        VALUES (?, ?, ?, ?, ?, ?);
+        INSERT INTO task (User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate, Task_done)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
     `;
 
     db.query(
         insertTaskQuery,
-        [User_ID, Task_title, Task_desc, Task_due_date, Task_refresh || false, Task_refresh_rate || null],
+        [User_ID, Task_title, Task_desc, Task_due_date, Task_refresh || false, Task_refresh_rate || null, Task_done = 0],
         (err, result) => {
             if (err) {
                 console.error('Error adding task:', err);
@@ -38,7 +38,7 @@ router.post('/add-task', (req, res) => {
 
 //Deleting tasks
 router.delete('/delete-task', (req, res) => {
-    const { Task_ID } = req.query;
+    const { Task_ID } = req.body;
 
     // Check required fields
     if (!Task_ID)
@@ -67,7 +67,7 @@ router.delete('/delete-task', (req, res) => {
 //Updating tasks
 router.put('/update-task/', (req, res) => {
     //const { id } = req.params; // Get the task ID from the URL parameters
-    const { Task_ID ,Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.query;
+    const { Task_ID ,Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.body;
 
     // Ensure at least one field to update is provided
     if (!Task_title && !Task_desc && !Task_due_date && Task_refresh === undefined && !Task_refresh_rate) {
@@ -121,7 +121,7 @@ router.put('/update-task/', (req, res) => {
 
 //Select tasks
 router.get('/select-task', (req, res) => {
-    const { Task_Id } = req.query; // Get Task_Id from query parameters
+    const { Task_Id } = req.body; // Get Task_Id from query parameters
 
     let selectTaskQuery;
     let queryParams = [];
