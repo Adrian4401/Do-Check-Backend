@@ -36,34 +36,6 @@ router.post('/add-task', (req, res) => {
     );
 });
 
-//Deleting tasks
-router.delete('/delete-task', (req, res) => {
-    const { Task_ID } = req.body;
-
-    // Check required fields
-    if (!Task_ID)
-        return res.status(400).json({ error: 'Task_ID is required' });
-
-    // SQL query
-    const deleteTaskQuery =
-        'DELETE FROM task WHERE Task_ID LIKE ?;';
- 
-    db.query(
-        deleteTaskQuery,
-        [Task_ID],
-        (err, result) => {
-            if (err) {
-                console.error('Error deleting task:', err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ message: 'Task not found' });
-            }
-            res.json({ message: 'Task deleted successfully' });
-        }
-    );
-});
-
 //Updating tasks
 router.put('/update-task/', (req, res) => {
     //const { id } = req.params; // Get the task ID from the URL parameters
@@ -149,6 +121,120 @@ router.get('/select-task', (req, res) => {
 
         res.json(results);
     });
+});
+
+// Select non complete tasks
+router.get('/select-current-tasks/', (req, res) => {
+    const currentDate = new Date();
+    let selectTaskQuery;
+    let queryParams = [];
+
+    selectTaskQuery = 'SELECT Task_ID, Task_title, Task_due_date FROM `task` WHERE Task_done NOT LIKE 1 AND Task_due_date >= ?';
+    queryParams = [currentDate];
+
+    db.query(selectTaskQuery, queryParams, (err, results) => {
+        if (err) {
+            console.error('Error fetching task(s):', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+        }
+
+        res.json(results);
+    });
+});
+
+// Select completed tasks
+router.get('/select-completed-tasks/', (req, res) => {
+    let selectTaskQuery;
+
+    selectTaskQuery = 'SELECT Task_ID, Task_title, Task_due_date FROM `task` WHERE Task_done LIKE 1';
+
+    db.query(selectTaskQuery, [], (err, results) => {
+        if (err) {
+            console.error('Error fetching task(s):', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+        }
+
+        res.json(results);
+    });
+});
+
+// Select failed tasks
+router.get('/select-failed-tasks/', (req, res) => {
+    const currentDate = new Date();
+    let selectTaskQuery;
+    let queryParams = [];
+
+    selectTaskQuery = 'SELECT Task_ID, Task_title, Task_due_date FROM `task` WHERE Task_done NOT LIKE 1 AND Task_due_date < ?';
+    queryParams = [currentDate];
+
+    db.query(selectTaskQuery, queryParams, (err, results) => {
+        if (err) {
+            console.error('Error fetching task(s):', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+        }
+
+        res.json(results);
+    });
+});
+
+// Mark task as completed
+router.put('/complete-task/', (req, res) => {
+    const { Task_ID } = req.body;
+
+    if (!Task_ID)
+        return res.status(400).json({ error: 'Task ID is required to update' });
+
+    const updateTaskQuery = 'UPDATE task SET Task_done = 1 WHERE Task_ID LIKE ?';
+
+    db.query(updateTaskQuery, [Task_ID], (err, result) => {
+        if (err) {
+            console.error('Error updating task:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        res.json({ message: 'Task updated successfully' });
+    });
+});
+
+//Deleting tasks
+router.put('/delete-task', (req, res) => {
+    const { Task_ID } = req.body;
+
+    // Check required fields
+    if (!Task_ID)
+        return res.status(400).json({ error: 'Task_ID is required' });
+
+    // SQL query
+    const deleteTaskQuery =
+        'UPDATE task SET Task_deleted = 1 WHERE Task_ID LIKE ?;';
+
+    db.query(deleteTaskQuery, [Task_ID], (err, result) => {
+            if (err) {
+                console.error('Error deleting task:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: 'Task not found' });
+            }
+            res.json({ message: 'Task deleted successfully' });
+        }
+    );
 });
 
 module.exports = router;
