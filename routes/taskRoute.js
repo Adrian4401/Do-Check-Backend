@@ -25,7 +25,7 @@ router.post('/add-task', (req, res) => {
 
     db.query(
         insertTaskQuery,
-        [User_ID, Task_title, Task_desc, Task_due_date, Task_refresh || false, Task_refresh_rate || null, Task_done = 0],
+        [User_ID, Task_title, Task_desc, Task_due_date, Task_refresh || false, Task_refresh_rate || null],
         (err, result) => {
             if (err) {
                 console.error('Error adding task:', err);
@@ -169,6 +169,7 @@ router.get('/select-completed-tasks/', (req, res) => {
 // Select failed tasks
 router.get('/select-failed-tasks/', (req, res) => {
     const currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - 1);
     let selectTaskQuery;
     let queryParams = [];
 
