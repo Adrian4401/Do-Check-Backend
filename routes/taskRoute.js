@@ -159,7 +159,8 @@ router.get('/select-completed-tasks/', (req, res) => {
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+            // return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+            return res.status(404).json({ message: 'No tasks available' });
         }
 
         res.json(results);
@@ -183,7 +184,8 @@ router.get('/select-failed-tasks/', (req, res) => {
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+            // return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+            return res.status(404).json({ message: 'No tasks available' });
         }
 
         res.json(results);
