@@ -93,7 +93,10 @@ router.put('/update-task/', (req, res) => {
 
 //Select tasks
 router.get('/select-task', (req, res) => {
-    const { Task_Id } = req.body; // Get Task_Id from query parameters
+    // const { Task_Id } = req.query;
+
+    const Task_Id = req.query.Task_ID;
+    console.log("Odebrano Task_ID:", Task_Id);
 
     let selectTaskQuery;
     let queryParams = [];
