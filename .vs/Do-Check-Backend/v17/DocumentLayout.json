@@ -34,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
@@ -47,8 +47,7 @@
               "ViewState": "AQIAAAAAAAAAAAAAAAAAABEAAAADAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2024-11-07T02:42:39.59Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -60,12 +59,7 @@
               "RelativeToolTip": "db_connect.js",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2024-11-08T10:11:41.262Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+              "WhenOpened": "2024-11-08T10:11:41.262Z"
             },
             {
               "$type": "Document",
@@ -75,7 +69,7 @@
               "RelativeDocumentMoniker": "routes\\taskRoute.js",
               "ToolTip": "C:\\Users\\makow\\source\\repos\\Do-Check-Backend\\routes\\taskRoute.js",
               "RelativeToolTip": "routes\\taskRoute.js",
-              "ViewState": "AQIAAHIAAAAAAAAAAAAAAJQAAAAAAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAOIAAAA7AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2024-11-07T21:13:16.31Z",
               "EditorCaption": ""
