@@ -1,6 +1,6 @@
-// routes/taskRoute.js
 const express = require('express');
 const db = require('../db_connect'); // Import the database connection
+const upload = require('../middlewares/multerConfig');
 const router = express.Router();
 
 //Adding tasks
@@ -38,7 +38,6 @@ router.post('/add-task', (req, res) => {
 
 //Updating tasks
 router.put('/update-task/', (req, res) => {
-    //const { id } = req.params; // Get the task ID from the URL parameters
     const { Task_ID ,Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.body;
 
     // Ensure at least one field to update is provided
@@ -93,23 +92,20 @@ router.put('/update-task/', (req, res) => {
 
 //Select tasks
 router.get('/select-task', (req, res) => {
-    // const { Task_Id } = req.query;
+    const { Task_Id } = req.query;
 
-    const Task_Id = req.query.Task_ID;
-    console.log("Odebrano Task_ID:", Task_Id);
+    if (!Task_Id) 
+        return res.status(400).json({ error: 'Task ID is required to select' });
 
-    let selectTaskQuery;
-    let queryParams = [];
-
-    // Check if Task_Id is provided
-    if (Task_Id) {
-        // Query to select a specific task by Task_Id
-        selectTaskQuery = 'SELECT * FROM task WHERE Task_Id = ?';
-        queryParams = [Task_Id];
-    } else {
-        // Query to select all tasks
-        selectTaskQuery = 'SELECT * FROM task';
-    }
+    // Query to select a specific task by Task_Id
+    const selectTaskQuery = `
+        SELECT Task_title, Task_due_date, Task_desc, Name, Path, Type 
+        FROM task 
+        INNER JOIN link 
+        ON task.Task_Id = link.Task_Id 
+        WHERE task.Task_Id = ?;
+    `;
+    const queryParams = [Task_Id];
 
     // Execute the query
     db.query(selectTaskQuery, queryParams, (err, results) => {
