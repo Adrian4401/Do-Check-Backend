@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../db_connect'); // Import bazy danych
+const db = require('../db_connect');
 const upload = require('../middlewares/multerConfig');
 const router = express.Router();
 

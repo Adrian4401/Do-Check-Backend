@@ -1,31 +1,36 @@
 const express = require('express');
-const db = require('../db_connect'); // Import the database connection
+const db = require('../db_connect');
 const upload = require('../middlewares/multerConfig');
+const mysql = require('mysql2/promise');
 const router = express.Router();
+
+router.use(express.urlencoded({ extended: true }));
+router.use(express.json());
 
 //Adding tasks
 router.post('/add-task', (req, res) => {
-    const { User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.body;
+    const { User_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
+    console.log('Body:', req.body);
 
     // Check required fields
-    if (!User_ID || !Task_title || !Task_due_date)
-        return res.status(402).json({ error: 'User_ID, Task_title, and Task_due_date are required' });
+    if (!User_ID || !Title || !Due_date)
+        return res.status(402).json({ error: 'User_ID, Title, and Due_date are required' });
     
     // Validation
-    const dueDate = new Date(Task_due_date);
+    const dueDate = new Date(Due_date);
     if (isNaN(dueDate.getTime())) {
-        return res.status(401).json({ error: 'Invalid date format for Task_due_date. Use YYYY-MM-DD.' });
+        return res.status(401).json({ error: 'Invalid date format for Due_date. Use YYYY-MM-DD.' });
     }
 
     // SQL query
     const insertTaskQuery = `
-        INSERT INTO task (User_ID, Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate)
+        INSERT INTO task (User_ID, Title, Descript, Due_date, Refresh, Refresh_rate)
         VALUES (?, ?, ?, ?, ?, ?);
     `;
 
     db.query(
         insertTaskQuery,
-        [User_ID, Task_title, Task_desc, Task_due_date, Task_refresh || false, Task_refresh_rate || null],
+        [User_ID, Title, Descript, Due_date, Refresh || false, Refresh_rate || null],
         (err, result) => {
             if (err) {
                 console.error('Error adding task:', err);
@@ -36,38 +41,41 @@ router.post('/add-task', (req, res) => {
     );
 });
 
-//Updating tasks
+//Updating tasks (with files)
 router.put('/update-task/', (req, res) => {
-    const { Task_ID ,Task_title, Task_desc, Task_due_date, Task_refresh, Task_refresh_rate } = req.body;
+    const { Task_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
 
-    // Ensure at least one field to update is provided
-    if (!Task_title && !Task_desc && !Task_due_date && Task_refresh === undefined && !Task_refresh_rate) {
-        return res.status(400).json({ error: 'At least one field is required to update' });
+    if (!Task_ID) {
+        return res.status(401).json({ error: 'Task_ID is required to update the task.' });
+    }
+
+    if (!Title && !Descript && !Due_date && Refresh === undefined && !Refresh_rate) {
+        return res.status(402).json({ error: 'At least one field is required to update' });
     }
 
     // Build the dynamic SQL query based on provided fields
     let updateFields = [];
     let values = [];
 
-    if (Task_title) {
-        updateFields.push('Task_title = ?');
-        values.push(Task_title);
+    if (Title) {
+        updateFields.push('Title = ?');
+        values.push(Title);
     }
-    if (Task_desc) {
-        updateFields.push('Task_desc = ?');
-        values.push(Task_desc);
+    if (Descript) {
+        updateFields.push('Descript = ?');
+        values.push(Descript);
     }
-    if (Task_due_date) {
-        updateFields.push('Task_due_date = ?');
-        values.push(Task_due_date);
+    if (Due_date) {
+        updateFields.push('Due_date = ?');
+        values.push(Due_date);
     }
-    if (Task_refresh !== undefined) { // Check explicitly for undefined to allow setting false
-        updateFields.push('Task_refresh = ?');
-        values.push(Task_refresh);
+    if (Refresh !== undefined) { // Check explicitly for undefined to allow setting false
+        updateFields.push('Refresh = ?');
+        values.push(Refresh);
     }
-    if (Task_refresh_rate) {
-        updateFields.push('Task_refresh_rate = ?');
-        values.push(Task_refresh_rate);
+    if (Refresh_rate) {
+        updateFields.push('Refresh_rate = ?');
+        values.push(Refresh_rate);
     }
 
     // Convert the array of fields to a single string for the query
@@ -90,6 +98,97 @@ router.put('/update-task/', (req, res) => {
     });
 });
 
+//Updating tasks (with files)
+router.put('/update-task-experiment/', upload.array('file'), async (req, res) => {
+    const { Task_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
+    const files = req.files;
+
+    if (!Task_ID) {
+        return res.status(401).json({ error: 'Task_ID is required to update the task.' });
+    }
+    
+    if (!Title && !Descript && !Due_date && Refresh === undefined && !Refresh_rate) {
+        return res.status(402).json({ error: 'At least one field is required to update' });
+    }
+
+    // Build the dynamic SQL query based on provided fields
+    let updateFields = [];
+    let values = [];
+
+    if (Title) {
+        updateFields.push('Title = ?');
+        values.push(Title);
+    }
+    if (Descript) {
+        updateFields.push('Descript = ?');
+        values.push(Descript);
+    }
+    if (Due_date) {
+        updateFields.push('Due_date = ?');
+        values.push(Due_date);
+    }
+    if (Refresh !== undefined) { // Check explicitly for undefined to allow setting false
+        updateFields.push('Refresh = ?');
+        values.push(Refresh);
+    }
+    if (Refresh_rate) {
+        updateFields.push('Refresh_rate = ?');
+        values.push(Refresh_rate);
+    }
+
+    // Convert the array of fields to a single string for the query
+    const updateTaskQuery = `UPDATE task SET ${updateFields.join(', ')} WHERE Task_ID = ?`;
+    values.push(Task_ID); // Add the task ID to the end of the values array
+
+    // Create query for adding links
+    let insertLinkQuery = '';
+    let fileValues = [];
+    if (files && files.length > 0) {
+        insertLinkQuery = `
+      INSERT INTO link (Task_ID, Name, Path, Type)
+      VALUES ?;
+    `;
+        fileValues = files.map(file => [
+            Task_ID,
+            file.originalname,
+            file.path,
+            file.mimetype,
+        ]);
+    }
+
+    // Begin transaction adn execute queries
+    //try {
+        //await db.beginTransaction();
+
+        db.query(updateTaskQuery, values);
+
+        if (insertLinkQuery && fileValues.length > 0) {
+            db.query(insertLinkQuery, [fileValues]);
+        }
+
+        //await connection.commit();
+        //res.status(200).json({ message: 'Task updated successfully.' });
+    //} catch (err) {
+        //await db.rollback();
+        //res.status(500).json({ error: 'Failed to update task.' });
+    //}
+    
+    // Execute the query
+    /* db.query(updateTaskQuery, values, (err, result) => {
+        if (err) {
+            console.error('Error updating task:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (result.affectedRows === 0) {
+            // No rows were affected, so the task ID might not exist
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        res.json({ message: 'Task updated successfully' });
+    }); */
+});
+
 //Select tasks
 router.get('/select-task', (req, res) => {
     const { Task_Id } = req.query;
@@ -99,7 +198,7 @@ router.get('/select-task', (req, res) => {
 
     // Query to select a specific task by Task_Id
     const selectTaskQuery = `
-        SELECT Task_title, Task_due_date, Task_desc, Name, Path, Type 
+        SELECT Title, Due_date, Descript, Name, Path, Type 
         FROM task 
         INNER JOIN link 
         ON task.Task_Id = link.Task_Id 
@@ -128,7 +227,7 @@ router.get('/select-current-tasks/', (req, res) => {
     let selectTaskQuery;
     let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Task_title, Task_due_date FROM `task` WHERE Task_done NOT LIKE 1 AND Task_due_date >= ?';
+    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Due_date >= ?';
     queryParams = [currentDate];
 
     db.query(selectTaskQuery, queryParams, (err, results) => {
@@ -149,7 +248,7 @@ router.get('/select-current-tasks/', (req, res) => {
 router.get('/select-completed-tasks/', (req, res) => {
     let selectTaskQuery;
 
-    selectTaskQuery = 'SELECT Task_ID, Task_title, Task_due_date FROM `task` WHERE Task_done LIKE 1';
+    selectTaskQuery = 'SELECT Task_ID, Task_title, Due_date FROM `task` WHERE Is_completed LIKE 1';
 
     db.query(selectTaskQuery, [], (err, results) => {
         if (err) {
@@ -173,7 +272,7 @@ router.get('/select-failed-tasks/', (req, res) => {
     let selectTaskQuery;
     let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Task_title, Task_due_date FROM `task` WHERE Task_done NOT LIKE 1 AND Task_due_date < ?';
+    selectTaskQuery = 'SELECT Task_ID, Task_title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Due_date < ?';
     queryParams = [currentDate];
 
     db.query(selectTaskQuery, queryParams, (err, results) => {
@@ -198,7 +297,7 @@ router.put('/complete-task/', (req, res) => {
     if (!Task_ID)
         return res.status(400).json({ error: 'Task ID is required to update' });
 
-    const updateTaskQuery = 'UPDATE task SET Task_done = 1 WHERE Task_ID LIKE ?';
+    const updateTaskQuery = 'UPDATE task SET Is_completed = 1 WHERE Task_ID LIKE ?';
 
     db.query(updateTaskQuery, [Task_ID], (err, result) => {
         if (err) {
@@ -224,7 +323,7 @@ router.put('/delete-task', (req, res) => {
 
     // SQL query
     const deleteTaskQuery =
-        'UPDATE task SET Task_deleted = 1 WHERE Task_ID LIKE ?;';
+        'UPDATE task SET Is_deleted = 1 WHERE Task_ID LIKE ?;';
 
     db.query(deleteTaskQuery, [Task_ID], (err, result) => {
             if (err) {

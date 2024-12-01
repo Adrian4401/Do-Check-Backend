@@ -1,8 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\controllers",
     "\\routes"
   ],
+  "SelectedNode": "\\routes\\linkRoute.js",
   "PreviewInSolutionExplorer": false
 }
