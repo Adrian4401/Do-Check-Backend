@@ -191,18 +191,22 @@ router.put('/update-task-experiment/', upload.array('file'), async (req, res) =>
 
 //Select tasks
 router.get('/select-task', (req, res) => {
-    const { Task_Id } = req.query;
+    // const { Task_Id } = req.query;
+    const Task_Id = req.query.Task_ID;
+    console.log(Task_Id)
 
     if (!Task_Id) 
         return res.status(400).json({ error: 'Task ID is required to select' });
 
     // Query to select a specific task by Task_Id
+    // 
+    // SELECT Title, Due_date, Descript FROM task WHERE Task_ID = ?;
     const selectTaskQuery = `
         SELECT Title, Due_date, Descript, Name, Path, Type 
         FROM task 
         INNER JOIN link 
-        ON task.Task_Id = link.Task_Id 
-        WHERE task.Task_Id = ?;
+        ON task.Task_ID = link.Task_ID 
+        WHERE task.Task_ID = ?;
     `;
     const queryParams = [Task_Id];
 
@@ -247,10 +251,11 @@ router.get('/select-current-tasks/', (req, res) => {
 // Select completed tasks
 router.get('/select-completed-tasks/', (req, res) => {
     let selectTaskQuery;
+    let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Task_title, Due_date FROM `task` WHERE Is_completed LIKE 1';
+    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed LIKE 1';
 
-    db.query(selectTaskQuery, [], (err, results) => {
+    db.query(selectTaskQuery, queryParams, (err, results) => {
         if (err) {
             console.error('Error fetching task(s):', err);
             return res.status(500).json({ error: 'Database error' });
@@ -272,7 +277,7 @@ router.get('/select-failed-tasks/', (req, res) => {
     let selectTaskQuery;
     let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Task_title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Due_date < ?';
+    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Due_date < ?';
     queryParams = [currentDate];
 
     db.query(selectTaskQuery, queryParams, (err, results) => {
