@@ -191,9 +191,8 @@ router.put('/update-task-experiment/', upload.array('file'), async (req, res) =>
 
 //Select tasks
 router.get('/select-task', (req, res) => {
-    // const { Task_Id } = req.query;
     const Task_Id = req.query.Task_ID;
-    console.log(Task_Id)
+    console.log(Task_Id);
 
     if (!Task_Id) 
         return res.status(400).json({ error: 'Task ID is required to select' });
@@ -297,14 +296,15 @@ router.get('/select-failed-tasks/', (req, res) => {
 
 // Mark task as completed
 router.put('/complete-task/', (req, res) => {
-    const { Task_ID } = req.body;
+    const Task_Id = req.body.Task_ID;
+    console.log(Task_Id);
 
-    if (!Task_ID)
+    if (!Task_Id)
         return res.status(400).json({ error: 'Task ID is required to update' });
 
-    const updateTaskQuery = 'UPDATE task SET Is_completed = 1 WHERE Task_ID LIKE ?';
+    const updateTaskQuery = 'UPDATE task SET Is_completed = 1 WHERE Task_ID = ?';
 
-    db.query(updateTaskQuery, [Task_ID], (err, result) => {
+    db.query(updateTaskQuery, [Task_Id], (err, result) => {
         if (err) {
             console.error('Error updating task:', err);
             return res.status(500).json({ error: 'Database error' });
