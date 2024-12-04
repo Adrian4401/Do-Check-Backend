@@ -230,7 +230,7 @@ router.get('/select-current-tasks/', (req, res) => {
     let selectTaskQuery;
     let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Due_date >= ?';
+    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Is_deleted LIKE 0 AND Due_date >= ?';
     queryParams = [currentDate];
 
     db.query(selectTaskQuery, queryParams, (err, results) => {
@@ -320,17 +320,18 @@ router.put('/complete-task/', (req, res) => {
 
 //Deleting tasks
 router.put('/delete-task', (req, res) => {
-    const { Task_ID } = req.body;
+    const Task_Id = req.body.Task_ID;
+    console.log(Task_Id);
 
     // Check required fields
-    if (!Task_ID)
+    if (!Task_Id)
         return res.status(400).json({ error: 'Task_ID is required' });
 
     // SQL query
     const deleteTaskQuery =
-        'UPDATE task SET Is_deleted = 1 WHERE Task_ID LIKE ?;';
+        'UPDATE task SET Is_deleted = 1 WHERE Task_ID LIKE ?';
 
-    db.query(deleteTaskQuery, [Task_ID], (err, result) => {
+    db.query(deleteTaskQuery, [Task_Id], (err, result) => {
             if (err) {
                 console.error('Error deleting task:', err);
                 return res.status(500).json({ error: 'Database error' });
