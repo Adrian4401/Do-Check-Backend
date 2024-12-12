@@ -1,28 +1,31 @@
 const express = require('express');
 const db = require('../db_connect');
 const upload = require('../middlewares/multerConfig');
+const path = require('path');
 const mysql = require('mysql2/promise');
+const connection = require('../db_connect');
 const router = express.Router();
 
 router.use(express.urlencoded({ extended: true }));
 router.use(express.json());
 
 //Adding tasks
-router.post('/add-task', (req, res) => {
+router.post('/add-task', upload.array('file'), (req, res) => {
     const { User_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
-    console.log('Body:', req.body);
+    const files = req.files;
 
-    // Check required fields
-    if (!User_ID || !Title || !Due_date)
+    // Validate required fields
+    if (!User_ID || !Title || !Due_date) {
         return res.status(402).json({ error: 'User_ID, Title, and Due_date are required' });
-    
-    // Validation
+    }
+
+    // Validate due date
     const dueDate = new Date(Due_date);
     if (isNaN(dueDate.getTime())) {
         return res.status(401).json({ error: 'Invalid date format for Due_date. Use YYYY-MM-DD.' });
     }
 
-    // SQL query
+    // Insert task query
     const insertTaskQuery = `
         INSERT INTO task (User_ID, Title, Descript, Due_date, Refresh, Refresh_rate)
         VALUES (?, ?, ?, ?, ?, ?);
@@ -34,9 +37,31 @@ router.post('/add-task', (req, res) => {
         (err, result) => {
             if (err) {
                 console.error('Error adding task:', err);
-                return res.status(500).json({ error: 'Database error' });
+                return res.status(500).json({ error: 'Database error while adding task' });
             }
-            res.json({ message: 'Task added successfully', taskId: result.insertId });
+
+            const taskId = result.insertId;
+
+            // If no files to attach, respond immediately
+            if (!files || files.length === 0) {
+                return res.json({ message: 'Task added successfully', taskId });
+            }
+
+            // Insert files query
+            const insertFileQuery = `
+                INSERT INTO link (Name, Path, Type, Task_ID)
+                VALUES ?
+            `;
+            const fileData = files.map(file => [file.originalname, path.relative(process.cwd(), file.path), file.mimetype, taskId]);
+
+            db.query(insertFileQuery, [fileData], (fileErr) => {
+                if (fileErr) {
+                    console.error('Error adding files:', fileErr);
+                    return res.status(500).json({ error: 'Task added, but error occurred while attaching files' });
+                }
+
+                res.json({ message: 'Task and files added successfully', taskId });
+            });
         }
     );
 });
@@ -106,7 +131,7 @@ router.put('/update-task-experiment/', upload.array('file'), async (req, res) =>
     if (!Task_ID) {
         return res.status(401).json({ error: 'Task_ID is required to update the task.' });
     }
-    
+
     if (!Title && !Descript && !Due_date && Refresh === undefined && !Refresh_rate) {
         return res.status(402).json({ error: 'At least one field is required to update' });
     }
@@ -140,53 +165,73 @@ router.put('/update-task-experiment/', upload.array('file'), async (req, res) =>
     const updateTaskQuery = `UPDATE task SET ${updateFields.join(', ')} WHERE Task_ID = ?`;
     values.push(Task_ID); // Add the task ID to the end of the values array
 
-    // Create query for adding links
-    let insertLinkQuery = '';
-    let fileValues = [];
-    if (files && files.length > 0) {
-        insertLinkQuery = `
-      INSERT INTO link (Task_ID, Name, Path, Type)
-      VALUES ?;
-    `;
-        fileValues = files.map(file => [
-            Task_ID,
-            file.originalname,
-            file.path,
-            file.mimetype,
-        ]);
-    }
+    // Prepare get links query
+    const selectLinksQuery = 'SELECT Name from link WHERE Task_ID = ?';
 
-    // Begin transaction adn execute queries
-    //try {
-        //await db.beginTransaction();
-
-        db.query(updateTaskQuery, values);
-
-        if (insertLinkQuery && fileValues.length > 0) {
-            db.query(insertLinkQuery, [fileValues]);
-        }
-
-        //await connection.commit();
-        //res.status(200).json({ message: 'Task updated successfully.' });
-    //} catch (err) {
-        //await db.rollback();
-        //res.status(500).json({ error: 'Failed to update task.' });
-    //}
-    
-    // Execute the query
-    /* db.query(updateTaskQuery, values, (err, result) => {
+    db.query(selectLinksQuery, [Task_ID], (err, result) => {
         if (err) {
-            console.error('Error updating task:', err);
-            return res.status(500).json({ error: 'Database error' });
+            console.error('Error retireving links:', err);
+            return result.status(500).json({ error: 'Database error' });
         }
 
-        if (result.affectedRows === 0) {
-            // No rows were affected, so the task ID might not exist
-            return res.status(404).json({ message: 'Task not found' });
+        const existingFileNames = result.map(row => row.Name);
+        const newFileNames = files.map(file => file.originalname);
+
+        const filesToDelete = existingFileNames.filter(name => !newFileNames.includes(name));
+        const filesToInsert = newFileNames.filter(name => !existingFileNames.includes(name));
+
+        // Delete links query
+        if (filesToDelete.length > 0) {
+            const deleteFilesQuery = 'UPDATE link SET Is_deleted = 1 WHERE Task_ID = ? AND Name IN (?)';
+            db.query(deleteFilesQuery, [Task_ID, filesToDelete], (err) => {
+                if (err) {
+                    console.error('Error deleting files:', err);
+                    return res.status(500).json({ error: 'Database error while deleting files' });
+                }
+            });
         }
 
-        res.json({ message: 'Task updated successfully' });
-    }); */
+        // Insert links query
+        console.log(filesToInsert.length);
+        if (filesToInsert.length > 0) {
+            const insertLinkQuery = `INSERT INTO link (Task_ID, Name, Path, Type) VALUES ?`;
+            const filesToInsertData = files.filter(file => filesToInsert.includes(file.originalname));
+            console.log(filesToInsertData);
+
+            const valuesToInsert = files.map(file => [
+                Task_ID,
+                file.originalname,
+                path.relative(file.path),
+                file.mimetype
+            ]);
+
+            db.query(insertLinkQuery, [valuesToInsert], (err) => {
+                if (err) {
+                    console.error('Error inserting files:', err);
+                    return res.status(500).json({ error: 'Database error while inserting files' });
+                }
+            });
+        }
+
+        // Update taks query
+        db.query(updateTaskQuery, values, (err, result) => {
+            if (err) {
+                console.error('Error updating task:', err);
+                return res.status(500).json({ error: 'Database error while updating task' });
+            }
+
+            if (result.affectedRows === 0) {
+                console.log(updateTaskQuery);
+                return res.status(404).json({ message: 'Task not found' });
+            }
+
+            res.json({
+                message: 'Task updated successfully',
+                removedFiles: filesToDelete,
+                addedFiles: filesToInsert
+            });
+        });
+    });
 });
 
 //Select tasks
