@@ -1,8 +1,9 @@
 // server.js
 const express = require('express');
 const dotenv = require('dotenv');
-const taskRoutes = require('./routes/taskRoute'); // Import task routes
+const taskRoutes = require('./routes/taskRoute');
 const linkRoutes = require('./routes/linkRoute');
+const dbRoutes = require('./routes/databaseRoute');
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ app.use(express.json()); // Middleware to parse JSON bodies
 // Use the task routes
 app.use('/task', taskRoutes);
 app.use('/link', linkRoutes);
+app.use('/database', dbRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Start the server
