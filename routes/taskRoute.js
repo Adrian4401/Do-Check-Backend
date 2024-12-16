@@ -303,7 +303,7 @@ router.get('/select-current-tasks/', (req, res) => {
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+            return res.status(404).json({ message: 'No tasks available' });
         }
 
         res.json(results);
@@ -315,7 +315,7 @@ router.get('/select-completed-tasks/', (req, res) => {
     let selectTaskQuery;
     let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed LIKE 1';
+    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed LIKE 1 AND Is_deleted LIKE 0';
 
     db.query(selectTaskQuery, queryParams, (err, results) => {
         if (err) {
@@ -339,7 +339,7 @@ router.get('/select-failed-tasks/', (req, res) => {
     let selectTaskQuery;
     let queryParams = [];
 
-    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Due_date < ?';
+    selectTaskQuery = 'SELECT Task_ID, Title, Due_date FROM `task` WHERE Is_completed NOT LIKE 1 AND Is_deleted LIKE 0 AND Due_date < ?';
     queryParams = [currentDate];
 
     db.query(selectTaskQuery, queryParams, (err, results) => {
