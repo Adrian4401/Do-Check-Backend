@@ -243,29 +243,47 @@ router.get('/select-task', (req, res) => {
         return res.status(400).json({ error: 'Task ID is required to select' });
 
     // Query to select a specific task by Task_Id
-    // 
+    //
     // SELECT Title, Due_date, Descript FROM task WHERE Task_ID = ?;
-    const selectTaskQuery = `
+    const selectLinksQuery = 'SELECT Link_ID FROM link INNER JOIN task ON link.Task_ID = task.Task_ID WHERE task.Task_ID = ?;';
+    const selectTaskQueryFull = `
         SELECT Title, Due_date, Descript, Name, Path, Type 
         FROM task 
         INNER JOIN link 
         ON task.Task_ID = link.Task_ID 
         WHERE task.Task_ID = ?;
     `;
+    const selectTaskQueryLite = `
+        SELECT Title, Due_date, Descript 
+        FROM task 
+        WHERE Task_ID = ?;
+    `;
     const queryParams = [Task_Id];
 
     // Execute the query
-    db.query(selectTaskQuery, queryParams, (err, results) => {
+    db.query(selectLinksQuery, queryParams, (err, results) => {
         if (err) {
-            console.error('Error fetching task(s):', err);
+            console.error('Error fetching link(s):', err);
             return res.status(500).json({ error: 'Database error' });
         }
 
         if (results.length === 0) {
-            return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
+            db.query(selectTaskQueryLite, queryParams, (err, results) => {
+                if (err) {
+                    console.error('Error fetching task(s):', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                res.json(results);
+            });
+        } else {
+            db.query(selectTaskQueryFull, queryParams, (err, results) => {
+                if (err) {
+                    console.error('Error fetching task(s):', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                res.json(results);
+            });
         }
-
-        res.json(results);
     });
 });
 
