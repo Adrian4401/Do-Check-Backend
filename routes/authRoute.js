@@ -24,14 +24,13 @@ router.post('/login', (req, res) => {
             return res.status(500).json({ message: 'Internal server error' });
         }
         if (results.length === 0) {
-            return res.status(401).json({ message: 'Invalid username or password' });
+            return res.status(401).json({ message: 'Invalid user' });
         }
         const user = results[0];
-        console.log(user);
+        console.log('User: ', user);
 
-        const isPasswordValid = await bcrypt.compare(password, user.Password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Invalid username or password' });
+        if (password !== user.Password) {
+            return res.status(401).json({ message: 'Invalid password' });
         }
 
         const token = jwt.sign(
