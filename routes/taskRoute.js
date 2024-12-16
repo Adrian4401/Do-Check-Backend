@@ -2,8 +2,6 @@ const express = require('express');
 const db = require('../db_connect');
 const upload = require('../middlewares/multerConfig');
 const path = require('path');
-const mysql = require('mysql2/promise');
-const connection = require('../db_connect');
 const router = express.Router();
 
 router.use(express.urlencoded({ extended: true }));

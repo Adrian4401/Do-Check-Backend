@@ -1,6 +1,5 @@
 const express = require('express');
 const db = require('../db_connect');
-const connection = require('../db_connect');
 const router = express.Router();
 
 //Deleting tasks
