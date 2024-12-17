@@ -243,13 +243,21 @@ router.get('/select-task', (req, res) => {
     // Query to select a specific task by Task_Id
     //
     // SELECT Title, Due_date, Descript FROM task WHERE Task_ID = ?;
-    const selectLinksQuery = 'SELECT Link_ID FROM link INNER JOIN task ON link.Task_ID = task.Task_ID WHERE task.Task_ID = ?;';
+    const selectLinksQuery = `
+        SELECT Link_ID 
+        FROM link 
+        INNER JOIN task 
+        ON link.Task_ID = task.Task_ID 
+        WHERE task.Task_ID = ? 
+        AND link.Is_deleted = 0;
+    `;
     const selectTaskQueryFull = `
         SELECT Title, Due_date, Descript, Name, Path, Type 
         FROM task 
         INNER JOIN link 
         ON task.Task_ID = link.Task_ID 
-        WHERE task.Task_ID = ?;
+        WHERE task.Task_ID = ?
+        AND link.Is_deleted = 0;
     `;
     const selectTaskQueryLite = `
         SELECT Title, Due_date, Descript 
