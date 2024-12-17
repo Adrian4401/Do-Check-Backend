@@ -199,7 +199,7 @@ router.put('/update-task-experiment/', upload.array('file'), async (req, res) =>
             const valuesToInsert = files.map(file => [
                 Task_ID,
                 file.originalname,
-                path.relative(file.path),
+                `uploads/${file.filename}`,
                 file.mimetype
             ]);
 
