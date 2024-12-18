@@ -252,7 +252,7 @@ router.get('/select-task', (req, res) => {
         AND link.Is_deleted = 0;
     `;
     const selectTaskQueryFull = `
-        SELECT Title, Due_date, Descript, Name, Path, Type 
+        SELECT Title, Due_date, Descript, Refresh_rate, Name, Path, Type 
         FROM task 
         INNER JOIN link 
         ON task.Task_ID = link.Task_ID 
@@ -260,7 +260,7 @@ router.get('/select-task', (req, res) => {
         AND link.Is_deleted = 0;
     `;
     const selectTaskQueryLite = `
-        SELECT Title, Due_date, Descript 
+        SELECT Title, Due_date, Descript, Refresh_rate 
         FROM task 
         WHERE Task_ID = ?;
     `;
