@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(express.urlencoded({ extended: true }));
 router.use(express.json());
 
-//Adding tasks
+// Adding tasks
 router.post('/add-task', upload.array('file'), (req, res) => {
     const { User_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
     const files = req.files;
@@ -64,7 +64,7 @@ router.post('/add-task', upload.array('file'), (req, res) => {
     );
 });
 
-//Updating tasks (with files)
+// Updating tasks (with files)
 router.put('/update-task/', (req, res) => {
     const { Task_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
 
@@ -121,7 +121,7 @@ router.put('/update-task/', (req, res) => {
     });
 });
 
-//Updating tasks (with files)
+// Updating tasks (with files)
 router.put('/update-task-experiment/', upload.array('file'), async (req, res) => {
     const { Task_ID, Title, Descript, Due_date, Refresh, Refresh_rate } = req.body;
     const files = req.files;
@@ -232,7 +232,7 @@ router.put('/update-task-experiment/', upload.array('file'), async (req, res) =>
     });
 });
 
-//Select tasks
+// Select tasks
 router.get('/select-task', (req, res) => {
     const Task_Id = req.query.Task_ID;
     console.log(Task_Id);
@@ -240,9 +240,6 @@ router.get('/select-task', (req, res) => {
     if (!Task_Id) 
         return res.status(400).json({ error: 'Task ID is required to select' });
 
-    // Query to select a specific task by Task_Id
-    //
-    // SELECT Title, Due_date, Descript FROM task WHERE Task_ID = ?;
     const selectLinksQuery = `
         SELECT Link_ID 
         FROM link 
@@ -266,7 +263,6 @@ router.get('/select-task', (req, res) => {
     `;
     const queryParams = [Task_Id];
 
-    // Execute the query
     db.query(selectLinksQuery, queryParams, (err, results) => {
         if (err) {
             console.error('Error fetching link(s):', err);
@@ -330,7 +326,6 @@ router.get('/select-completed-tasks/', (req, res) => {
         }
 
         if (results.length === 0) {
-            // return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
             return res.status(404).json({ message: 'No tasks available' });
         }
 
@@ -355,7 +350,6 @@ router.get('/select-failed-tasks/', (req, res) => {
         }
 
         if (results.length === 0) {
-            // return res.status(404).json({ message: Task_Id ? 'Task not found' : 'No tasks available' });
             return res.status(404).json({ message: 'No tasks available' });
         }
 
@@ -387,7 +381,7 @@ router.put('/complete-task/', (req, res) => {
     });
 });
 
-//Deleting tasks
+// Deleting tasks
 router.put('/delete-task', (req, res) => {
     const Task_Id = req.body.Task_ID;
     console.log(Task_Id);

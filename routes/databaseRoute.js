@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db_connect');
 const router = express.Router();
 
-//Deleting tasks
+// Deleting everything
 router.put('/delete-everything', (req, res) => {
 
     const deleteLinkQuery = 'UPDATE link SET Is_deleted = 1';

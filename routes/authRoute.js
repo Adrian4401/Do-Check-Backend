@@ -7,6 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 router.use(express.json());
 
+// Login
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
     console.log('Request Body:', req.body);

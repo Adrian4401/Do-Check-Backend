@@ -3,7 +3,7 @@ const db = require('../db_connect');
 const upload = require('../middlewares/multerConfig');
 const router = express.Router();
 
-// Dodawanie za³¹cznika
+// Adding link
 router.post('/add-link', upload.array('file'), (req, res) => {
     const { Task_ID } = req.body;
     const files = req.files;
@@ -33,7 +33,7 @@ router.post('/add-link', upload.array('file'), (req, res) => {
     });
 });
 
-// Pobieranie za³¹czników dla danego zadania
+// Selecting links for a task
 router.get('/select-by-task/:taskId', (req, res) => {
     const { taskId } = req.params;
 
